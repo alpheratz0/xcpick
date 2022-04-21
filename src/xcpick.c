@@ -231,7 +231,6 @@ main(int argc, char **argv) {
 	}
 
 end:
-	xcb_free_cursor(connection, cursor);
 	xcb_free_gc(connection, border);
 	xcb_free_gc(connection, fill);
 	xcb_free_cursor(connection, cursor);
