@@ -1,0 +1,12 @@
+xcpick
+======
+simple X11 color picker, preview: https://i.imgur.com/2UGdxrQ.mp4
+
+build
+=====
+in order to build xcpick you will need xcb headers
+$ make
+
+install
+=======
+$ sudo make install clean
