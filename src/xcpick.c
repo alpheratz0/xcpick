@@ -183,8 +183,8 @@ main(int argc, char **argv) {
 	while ((ev = xcb_wait_for_event(connection))) {
 		switch (ev->response_type & ~0x80) {
 			case XCB_EXPOSE:
-				xcb_poly_fill_rectangle(connection, window, border, 1, (const xcb_rectangle_t [1]) {{ 0, 0, 50, 50 }});
-				xcb_poly_fill_rectangle(connection, window, fill, 1, (const xcb_rectangle_t [1]) {{ 3, 3, 44, 44 }});
+				xcb_poly_fill_rectangle(connection, window, border, 1, (const xcb_rectangle_t[1]) {{ 0, 0, 50, 50 }});
+				xcb_poly_fill_rectangle(connection, window, fill, 1, (const xcb_rectangle_t[1]) {{ 3, 3, 44, 44 }});
 				xcb_flush(connection);
 				break;
 			case XCB_MOTION_NOTIFY:
