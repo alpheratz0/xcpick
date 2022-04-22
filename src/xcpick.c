@@ -48,7 +48,7 @@ version(void) {
 }
 
 static u32
-xcb_get_cursor_position(xcb_connection_t *connection, xcb_window_t window) {
+xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window) {
 	u32 position;
 	xcb_query_pointer_reply_t *reply;
 
@@ -126,7 +126,7 @@ main(int argc, char **argv) {
 	xcb_generic_event_t *ev;
 	xcb_motion_notify_event_t *mnev;
 	xcb_button_press_event_t *bpev;
-	u32 fill_color, border_color, cursor_position;
+	u32 fill_color, border_color, pointer_position;
 	int exit_status;
 
 	exit_status = 0;
@@ -152,13 +152,13 @@ main(int argc, char **argv) {
 		cursor, XCB_CURRENT_TIME
 	);
 
-	cursor_position = xcb_get_cursor_position(connection, screen->root);
-	fill_color = xcb_get_color_at(connection, screen->root, cursor_position >> 16, (cursor_position & 0xffff));
+	pointer_position = xcb_get_pointer_position(connection, screen->root);
+	fill_color = xcb_get_color_at(connection, screen->root, pointer_position >> 16, (pointer_position & 0xffff));
 	border_color = 0xffffff;
 
 	xcb_create_window(
 		connection, XCB_COPY_FROM_PARENT,
-		window, screen->root, cursor_position >> 16, (cursor_position & 0xffff) + 25, 50, 50, 0,
+		window, screen->root, pointer_position >> 16, (pointer_position & 0xffff) + 25, 50, 50, 0,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
 		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK,
 		(const u32[2]) {
