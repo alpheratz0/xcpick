@@ -220,6 +220,8 @@ main(int argc, char **argv) {
 						free(ev);
 						goto end;
 						break;
+					default:
+						break;
 				}
 
 				break;
