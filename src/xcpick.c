@@ -158,10 +158,11 @@ main(int argc, char **argv) {
 		connection, XCB_COPY_FROM_PARENT,
 		window, screen->root, pointer_position >> 16, (pointer_position & 0xffff) + 25, 44, 44, 3,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
-		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_EVENT_MASK,
-		(const u32[3]) {
+		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK,
+		(const u32[4]) {
 			fill_color,
 			border_color,
+			true,
 			XCB_EVENT_MASK_EXPOSURE
 		}
 	);
@@ -172,8 +173,6 @@ main(int argc, char **argv) {
 		connection, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
 		XCB_ATOM_STRING, 8, strlen("xcpick"), "xcpick"
 	);
-
-	xcb_change_window_attributes(connection, window, XCB_CW_OVERRIDE_REDIRECT, (const u32[1]) { 0x1 });
 
 	xcb_map_window(connection, window);
 	xcb_flush(connection);
