@@ -129,8 +129,6 @@ main(int argc, char **argv) {
 	u32 fill_color, border_color, pointer_position;
 	int exit_status;
 
-	exit_status = 0;
-
 	if (xcb_connection_has_error(connection = xcb_connect(NULL, NULL))) {
 		die("can't open display");
 	}
@@ -144,6 +142,7 @@ main(int argc, char **argv) {
 	fill = xcb_generate_id(connection);
 	cursor = xcb_get_cursor(connection, XC_GOBBLER);
 
+	exit_status = 0;
 	pointer_position = xcb_get_pointer_position(connection, screen->root);
 	fill_color = xcb_get_color_at(connection, screen->root, pointer_position >> 16, (pointer_position & 0xffff));
 	border_color = 0xffffff;
