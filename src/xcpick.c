@@ -121,7 +121,7 @@ main(int argc, char **argv) {
 	xcb_connection_t *connection;
 	xcb_screen_t *screen;
 	xcb_window_t window;
-	xcb_gcontext_t fill, border;
+	xcb_gcontext_t fill;
 	xcb_cursor_t cursor;
 	xcb_generic_event_t *ev;
 	xcb_motion_notify_event_t *mnev;
@@ -142,8 +142,11 @@ main(int argc, char **argv) {
 
 	window = xcb_generate_id(connection);
 	fill = xcb_generate_id(connection);
-	border = xcb_generate_id(connection);
 	cursor = xcb_get_cursor(connection, XC_GOBBLER);
+
+	pointer_position = xcb_get_pointer_position(connection, screen->root);
+	fill_color = xcb_get_color_at(connection, screen->root, pointer_position >> 16, (pointer_position & 0xffff));
+	border_color = 0xffffff;
 
 	xcb_grab_pointer(
 		connection, 0, screen->root,
@@ -152,23 +155,19 @@ main(int argc, char **argv) {
 		cursor, XCB_CURRENT_TIME
 	);
 
-	pointer_position = xcb_get_pointer_position(connection, screen->root);
-	fill_color = xcb_get_color_at(connection, screen->root, pointer_position >> 16, (pointer_position & 0xffff));
-	border_color = 0xffffff;
-
 	xcb_create_window(
 		connection, XCB_COPY_FROM_PARENT,
-		window, screen->root, pointer_position >> 16, (pointer_position & 0xffff) + 25, 50, 50, 0,
+		window, screen->root, pointer_position >> 16, (pointer_position & 0xffff) + 25, 44, 44, 3,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
-		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK,
-		(const u32[2]) {
+		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_EVENT_MASK,
+		(const u32[3]) {
 			fill_color,
+			border_color,
 			XCB_EVENT_MASK_EXPOSURE
 		}
 	);
 
 	xcb_create_gc(connection, fill, window, XCB_GC_FOREGROUND, &fill_color);
-	xcb_create_gc(connection, border, window, XCB_GC_FOREGROUND, &border_color);
 
 	xcb_change_property(
 		connection, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
@@ -183,8 +182,7 @@ main(int argc, char **argv) {
 	while ((ev = xcb_wait_for_event(connection))) {
 		switch (ev->response_type & ~0x80) {
 			case XCB_EXPOSE:
-				xcb_poly_fill_rectangle(connection, window, border, 1, (const xcb_rectangle_t[1]) {{ 0, 0, 50, 50 }});
-				xcb_poly_fill_rectangle(connection, window, fill, 1, (const xcb_rectangle_t[1]) {{ 3, 3, 44, 44 }});
+				xcb_poly_fill_rectangle(connection, window, fill, 1, (const xcb_rectangle_t[1]) {{ 0, 0, 44, 44 }});
 				xcb_flush(connection);
 				break;
 			case XCB_MOTION_NOTIFY:
@@ -233,7 +231,6 @@ main(int argc, char **argv) {
 	}
 
 end:
-	xcb_free_gc(connection, border);
 	xcb_free_gc(connection, fill);
 	xcb_free_cursor(connection, cursor);
 	xcb_disconnect(connection);
