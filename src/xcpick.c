@@ -69,7 +69,7 @@ xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window) {
 }
 
 static xcb_cursor_t
-xcb_get_cursor(xcb_connection_t *connection, i16 id) {
+xcb_load_cursor(xcb_connection_t *connection, i16 id) {
 	xcb_font_t font;
 	xcb_cursor_t cursor;
 
@@ -140,7 +140,7 @@ main(int argc, char **argv) {
 
 	window = xcb_generate_id(connection);
 	fill = xcb_generate_id(connection);
-	cursor = xcb_get_cursor(connection, XC_GOBBLER);
+	cursor = xcb_load_cursor(connection, XC_GOBBLER);
 
 	exit_status = 0;
 	pointer_position = xcb_get_pointer_position(connection, screen->root);
