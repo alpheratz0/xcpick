@@ -206,7 +206,7 @@ main(int argc, char **argv) {
 				fill_color = xcb_get_color_at(connection, screen->root, mnev->event_x, mnev->event_y);
 
 				xcb_change_window_attributes(connection, window, XCB_CW_BACK_PIXEL, &fill_color);
-				xcb_clear_area(connection, 1, window, 0, 0, 44, 44);
+				xcb_clear_area(connection, 0, window, 0, 0, 44, 44);
 
 				xcb_configure_window(
 					connection, window,
