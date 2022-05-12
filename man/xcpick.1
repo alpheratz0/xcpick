@@ -10,7 +10,29 @@ show the help message and exit
 .TP
 \fB\-v\fR, \fB\-\-version\fR
 display the program version
+.SH CONTROLS
+.TP
+\fBleft click\fR
+pick a color
+.TP
+\fBmiddle/right click\fR
+do not pick a color
+.SH EXAMPLES
+.TP
+\fBcopy the selected color to the clipboard\fR
+xcpick | xclip -i -sel clipboard
+.TP
+\fBshow a notification on the screen with the selected color\fR
+xcpick | xargs -I{} notify-send 'xcpick' '{}'
 .SH EXIT STATUS
-Exit status is 0 if the user picked a color, 1 if an error happened, and 2 if the user did not picked a color.
+.TP
+\fB0\fR
+a color has been picked
+.TP
+\fB1\fR
+an error occurred
+.TP
+\fB2\fR
+no color has been picked
 .SH BUGS
 https://github.com/alpheratz0/xcpick/issues
