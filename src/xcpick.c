@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
@@ -150,6 +151,7 @@ main(int argc, char **argv) {
 	xcb_motion_notify_event_t *mnev;
 	xcb_button_press_event_t *bpev;
 	u32 fill_color, border_color, pointer_position;
+	bool print_newline;
 	int exit_status;
 
 	if (xcb_connection_has_error(connection = xcb_connect(NULL, NULL))) {
@@ -165,6 +167,7 @@ main(int argc, char **argv) {
 	cursor = xcb_load_cursor(connection, XC_GOBBLER);
 
 	exit_status = 0;
+	print_newline = isatty(STDOUT_FILENO);
 	pointer_position = xcb_get_pointer_position(connection, screen->root);
 	fill_color = xcb_get_color_at(connection, screen->root, pointer_position >> 16, (pointer_position & 0xffff));
 	border_color = 0xffffff;
@@ -221,7 +224,7 @@ main(int argc, char **argv) {
 
 				switch (bpev->detail) {
 					case XCB_BUTTON_INDEX_1:
-						printf("%06x\n", fill_color);
+						printf("%06x%s", fill_color, print_newline ? "\n" : "");
 						free(ev);
 						goto end;
 						break;
