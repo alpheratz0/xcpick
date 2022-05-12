@@ -121,7 +121,6 @@ main(int argc, char **argv) {
 	xcb_connection_t *connection;
 	xcb_screen_t *screen;
 	xcb_window_t window;
-	xcb_gcontext_t fill;
 	xcb_cursor_t cursor;
 	xcb_generic_event_t *ev;
 	xcb_motion_notify_event_t *mnev;
@@ -139,7 +138,6 @@ main(int argc, char **argv) {
 	}
 
 	window = xcb_generate_id(connection);
-	fill = xcb_generate_id(connection);
 	cursor = xcb_load_cursor(connection, XC_GOBBLER);
 
 	exit_status = 0;
@@ -158,16 +156,13 @@ main(int argc, char **argv) {
 		connection, XCB_COPY_FROM_PARENT,
 		window, screen->root, pointer_position >> 16, (pointer_position & 0xffff) + 25, 44, 44, 3,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
-		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK,
-		(const u32[4]) {
+		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
+		(const u32[3]) {
 			fill_color,
 			border_color,
-			true,
-			XCB_EVENT_MASK_EXPOSURE
+			true
 		}
 	);
-
-	xcb_create_gc(connection, fill, window, XCB_GC_FOREGROUND, &fill_color);
 
 	xcb_change_property(
 		connection, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
@@ -179,16 +174,12 @@ main(int argc, char **argv) {
 
 	while ((ev = xcb_wait_for_event(connection))) {
 		switch (ev->response_type & ~0x80) {
-			case XCB_EXPOSE:
-				xcb_poly_fill_rectangle(connection, window, fill, 1, (const xcb_rectangle_t[1]) {{ 0, 0, 44, 44 }});
-				xcb_flush(connection);
-				break;
 			case XCB_MOTION_NOTIFY:
 				mnev = (xcb_motion_notify_event_t *)(ev);
 				fill_color = xcb_get_color_at(connection, screen->root, mnev->event_x, mnev->event_y);
 
-				xcb_change_gc(connection, fill, XCB_GC_FOREGROUND, &fill_color);
-				xcb_clear_area(connection, 1, window, 0, 0, 1, 1);
+				xcb_change_window_attributes(connection, window, XCB_CW_BACK_PIXEL, &fill_color);
+				xcb_clear_area(connection, 1, window, 0, 0, 44, 44);
 
 				xcb_configure_window(
 					connection, window,
@@ -229,7 +220,6 @@ main(int argc, char **argv) {
 	}
 
 end:
-	xcb_free_gc(connection, fill);
 	xcb_free_cursor(connection, cursor);
 	xcb_disconnect(connection);
 
