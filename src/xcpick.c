@@ -150,18 +150,23 @@ static u32
 xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, i16 x, i16 y)
 {
 	xcb_get_image_reply_t *reply;
+	xcb_get_image_cookie_t cookie;
+	xcb_generic_error_t *error;
 	u32 color;
 	u8 *data;
 
-	reply = xcb_get_image_reply(
-		connection,
-		xcb_get_image_unchecked(
-			connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
-			window, x, y, 1, 1,
-			(u32)(~0UL)
-		),
-		NULL
+	error = NULL;
+	cookie = xcb_get_image(
+		connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
+		window, x, y, 1, 1, (u32)(~0UL)
 	);
+
+	reply = xcb_get_image_reply(connection, cookie, &error);
+
+	if (NULL != error) {
+		dief("xcb_get_image failed with error code: %d",
+				(int)(error->error_code));
+	}
 
 	data = xcb_get_image_data(reply);
 	color = data[2] << 16 | data[1] << 8 | data[0];
