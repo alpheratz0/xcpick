@@ -215,7 +215,10 @@ main(int argc, char **argv)
 	exit_status = 0;
 	print_newline = isatty(STDOUT_FILENO);
 	pointer_position = xcb_get_pointer_position(connection, screen->root);
-	fill_color = xcb_get_color_at(connection, screen->root, pointer_position.x, pointer_position.y);
+	fill_color = xcb_get_color_at(
+		connection, screen->root,
+		pointer_position.x, pointer_position.y
+	);
 	border_color = 0xffffff;
 
 	xcb_grab_pointer(
@@ -227,9 +230,9 @@ main(int argc, char **argv)
 
 	xcb_create_window(
 		connection, XCB_COPY_FROM_PARENT,
-		window, screen->root, pointer_position.x, pointer_position.y + 25, 44, 44, 3,
-		XCB_WINDOW_CLASS_INPUT_OUTPUT,
-		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
+		window, screen->root, pointer_position.x, pointer_position.y + 25,
+		44, 44, 3, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
+		XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
 		(const u32[3]) {
 			fill_color,
 			border_color,
@@ -249,17 +252,32 @@ main(int argc, char **argv)
 		switch (ev->response_type & ~0x80) {
 			case XCB_MOTION_NOTIFY:
 				mnev = (xcb_motion_notify_event_t *)(ev);
-				fill_color = xcb_get_color_at(connection, screen->root, mnev->event_x, mnev->event_y);
 
-				xcb_change_window_attributes(connection, window, XCB_CW_BACK_PIXEL, &fill_color);
+				fill_color = xcb_get_color_at(
+					connection, screen->root,
+					mnev->event_x, mnev->event_y
+				);
+
+				xcb_change_window_attributes(
+					connection, window,
+					XCB_CW_BACK_PIXEL, &fill_color
+				);
+
 				xcb_clear_area(connection, 0, window, 0, 0, 44, 44);
 
 				xcb_configure_window(
 					connection, window,
 					XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
 					(const u32[2]) {
-						mnev->event_x < 25 ? 25 : (mnev->event_x >= screen->width_in_pixels - 75 ? screen->width_in_pixels - 75 : mnev->event_x),
-						mnev->event_y >= screen->height_in_pixels - 75 ? mnev->event_y - 75 : mnev->event_y + 25,
+						mnev->event_x < 25 ?
+							25 :
+							(mnev->event_x >= screen->width_in_pixels - 75 ?
+								screen->width_in_pixels - 75 :
+								mnev->event_x
+							),
+						mnev->event_y >= screen->height_in_pixels - 75 ?
+							mnev->event_y - 75 :
+							mnev->event_y + 25,
 					}
 				);
 
