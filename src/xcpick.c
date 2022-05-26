@@ -99,7 +99,7 @@ xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
 	reply = xcb_query_pointer_reply(connection, cookie, &error);
 
 	if (NULL != error) {
-		dief("xcb_query_pointer failed with error code %d",
+		dief("xcb_query_pointer failed with error code: %d",
 				(int)(error->error_code));
 	}
 
@@ -116,12 +116,31 @@ xcb_load_cursor(xcb_connection_t *connection, i16 id)
 {
 	xcb_font_t font;
 	xcb_cursor_t cursor;
+	xcb_void_cookie_t cookie;
+	xcb_generic_error_t *error;
 
 	font = xcb_generate_id(connection);
 	cursor = xcb_generate_id(connection);
+	cookie = xcb_open_font_checked(connection, font, strlen("cursor"), "cursor");
+	error = xcb_request_check(connection, cookie);
 
-	xcb_open_font(connection, font, strlen("cursor"), "cursor");
-	xcb_create_glyph_cursor(connection, cursor, font, font, id, id + 1, 0xffff, 0xffff, 0xffff, 0, 0, 0);
+	if (NULL != error) {
+		dief("xcb_open_font failed with error code: %d",
+				(int)(error->error_code));
+	}
+
+	cookie = xcb_create_glyph_cursor_checked(
+		connection, cursor, font, font,
+		id, id + 1, 0xffff, 0xffff, 0xffff, 0, 0, 0
+	);
+
+	error = xcb_request_check(connection, cookie);
+
+	if (NULL != error) {
+		dief("xcb_create_glyph_cursor failed with error code: %d",
+				(int)(error->error_code));
+	}
+
 	xcb_close_font(connection, font);
 
 	return cursor;
