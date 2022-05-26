@@ -99,7 +99,8 @@ xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
 	reply = xcb_query_pointer_reply(connection, cookie, &error);
 
 	if (NULL != error) {
-		dief("xcb_query_pointer failed with error code %d", (int)(error->error_code));
+		dief("xcb_query_pointer failed with error code %d",
+				(int)(error->error_code));
 	}
 
 	position.x = reply->root_x;
