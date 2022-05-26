@@ -52,13 +52,15 @@
 #include "cursorfont.h"
 
 static bool
-match_opt(const char *in, const char *sh, const char *lo) {
+match_opt(const char *in, const char *sh, const char *lo)
+{
 	return (strcmp(in, sh) == 0) ||
 		   (strcmp(in, lo) == 0);
 }
 
 static void
-usage(void) {
+usage(void)
+{
 	puts("Usage: xcpick [ -hv ]");
 	puts("Options are:");
 	puts("     -h | --help                    display this message and exit");
@@ -67,13 +69,15 @@ usage(void) {
 }
 
 static void
-version(void) {
+version(void)
+{
 	puts("xcpick version "VERSION);
 	exit(0);
 }
 
 static u32
-xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window) {
+xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
+{
 	u32 position;
 	xcb_query_pointer_reply_t *reply;
 
@@ -94,7 +98,8 @@ xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window) {
 }
 
 static xcb_cursor_t
-xcb_load_cursor(xcb_connection_t *connection, i16 id) {
+xcb_load_cursor(xcb_connection_t *connection, i16 id)
+{
 	xcb_font_t font;
 	xcb_cursor_t cursor;
 
@@ -109,7 +114,8 @@ xcb_load_cursor(xcb_connection_t *connection, i16 id) {
 }
 
 static u32
-xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, i16 x, i16 y) {
+xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, i16 x, i16 y)
+{
 	xcb_get_image_reply_t *reply;
 	u32 color;
 	u8 *data;
@@ -133,7 +139,8 @@ xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, i16 x, i16 y
 }
 
 int
-main(int argc, char **argv) {
+main(int argc, char **argv)
+{
 	/* skip program name */
 	--argc; ++argv;
 
