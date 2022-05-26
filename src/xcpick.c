@@ -51,6 +51,11 @@
 #include "debug.h"
 #include "cursorfont.h"
 
+typedef struct point {
+	i16 x;
+	i16 y;
+} point_t;
+
 static inline void
 print_opt(const char *sh, const char *lo, const char *desc)
 {
@@ -81,22 +86,24 @@ version(void)
 	exit(0);
 }
 
-static u32
+static point_t
 xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
 {
-	u32 position;
+	point_t position;
+	xcb_query_pointer_cookie_t cookie;
 	xcb_query_pointer_reply_t *reply;
+	xcb_generic_error_t *error;
 
-	reply = xcb_query_pointer_reply(
-		connection,
-		xcb_query_pointer_unchecked(
-			connection,
-			window
-		),
-		NULL
-	);
+	error = NULL;
+	cookie = xcb_query_pointer(connection, window);
+	reply = xcb_query_pointer_reply(connection, cookie, &error);
 
-	position = (u16)(reply->root_x) << 16 | (u16)(reply->root_y);
+	if (NULL != error) {
+		dief("xcb_query_pointer failed with error code %d", (int)(error->error_code));
+	}
+
+	position.x = reply->root_x;
+	position.y = reply->root_y;
 
 	free(reply);
 
@@ -163,7 +170,8 @@ main(int argc, char **argv)
 	xcb_generic_event_t *ev;
 	xcb_motion_notify_event_t *mnev;
 	xcb_button_press_event_t *bpev;
-	u32 fill_color, border_color, pointer_position;
+	u32 fill_color, border_color;
+	point_t pointer_position;
 	bool print_newline;
 	int exit_status;
 
@@ -182,7 +190,7 @@ main(int argc, char **argv)
 	exit_status = 0;
 	print_newline = isatty(STDOUT_FILENO);
 	pointer_position = xcb_get_pointer_position(connection, screen->root);
-	fill_color = xcb_get_color_at(connection, screen->root, pointer_position >> 16, (pointer_position & 0xffff));
+	fill_color = xcb_get_color_at(connection, screen->root, pointer_position.x, pointer_position.y);
 	border_color = 0xffffff;
 
 	xcb_grab_pointer(
@@ -194,7 +202,7 @@ main(int argc, char **argv)
 
 	xcb_create_window(
 		connection, XCB_COPY_FROM_PARENT,
-		window, screen->root, pointer_position >> 16, (pointer_position & 0xffff) + 25, 44, 44, 3,
+		window, screen->root, pointer_position.x, pointer_position.y + 25, 44, 44, 3,
 		XCB_WINDOW_CLASS_INPUT_OUTPUT,
 		screen->root_visual, XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
 		(const u32[3]) {
