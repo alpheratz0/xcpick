@@ -19,7 +19,7 @@ ${OBJ}:	src/debug.h \
 		src/cursorfont.h
 
 xcpick: ${OBJ}
-	${CC} -o $@ ${OBJ} ${LDFLAGS}
+	@${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 install: all
 	@mkdir -p ${DESTDIR}${PREFIX}/bin
