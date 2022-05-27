@@ -42,18 +42,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-#include "numdef.h"
 #include "debug.h"
 #include "cursorfont.h"
 
 typedef struct point {
-	i16 x;
-	i16 y;
+	int16_t x;
+	int16_t y;
 } point_t;
 
 static inline void
@@ -112,7 +112,7 @@ xcb_get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
 }
 
 static xcb_cursor_t
-xcb_load_cursor(xcb_connection_t *connection, i16 id)
+xcb_load_cursor(xcb_connection_t *connection, int16_t id)
 {
 	xcb_font_t font;
 	xcb_cursor_t cursor;
@@ -146,19 +146,19 @@ xcb_load_cursor(xcb_connection_t *connection, i16 id)
 	return cursor;
 }
 
-static u32
-xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, i16 x, i16 y)
+static uint32_t
+xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, int16_t x, int16_t y)
 {
 	xcb_get_image_reply_t *reply;
 	xcb_get_image_cookie_t cookie;
 	xcb_generic_error_t *error;
-	u32 color;
-	u8 *data;
+	uint32_t color;
+	uint8_t *data;
 
 	error = NULL;
 	cookie = xcb_get_image(
 		connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
-		window, x, y, 1, 1, (u32)(~0UL)
+		window, x, y, 1, 1, (uint32_t)(~0UL)
 	);
 
 	reply = xcb_get_image_reply(connection, cookie, &error);
@@ -196,7 +196,7 @@ main(int argc, char **argv)
 	xcb_generic_event_t *ev;
 	xcb_motion_notify_event_t *mnev;
 	xcb_button_press_event_t *bpev;
-	u32 fill_color, border_color;
+	uint32_t fill_color, border_color;
 	point_t pointer_position;
 	bool print_newline;
 	int exit_status;
@@ -234,7 +234,7 @@ main(int argc, char **argv)
 		window, screen->root, pointer_position.x, pointer_position.y + 25,
 		44, 44, 3, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
 		XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
-		(const u32[3]) {
+		(const uint32_t[3]) {
 			fill_color,
 			border_color,
 			true
@@ -269,7 +269,7 @@ main(int argc, char **argv)
 				xcb_configure_window(
 					connection, window,
 					XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
-					(const u32[2]) {
+					(const uint32_t[2]) {
 						mnev->event_x < 25 ?
 							25 :
 							(mnev->event_x >= screen->width_in_pixels - 75 ?

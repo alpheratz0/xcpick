@@ -15,7 +15,6 @@ OBJ = ${SRC:.c=.o}
 all: xcpick
 
 ${OBJ}:	src/debug.h \
-		src/numdef.h \
 		src/cursorfont.h
 
 xcpick: ${OBJ}
