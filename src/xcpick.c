@@ -204,7 +204,7 @@ main(int argc, char **argv)
 		die("can't open display");
 	}
 
-	if (!(screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data)) {
+	if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data)) {
 		xcb_disconnect(connection);
 		die("can't get default screen");
 	}
