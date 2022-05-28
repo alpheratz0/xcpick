@@ -153,6 +153,7 @@ xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, int16_t x, i
 	xcb_get_image_cookie_t cookie;
 	xcb_generic_error_t *error;
 	uint32_t color;
+	int data_length;
 	uint8_t *data;
 
 	error = NULL;
@@ -169,6 +170,13 @@ xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, int16_t x, i
 	}
 
 	data = xcb_get_image_data(reply);
+	data_length = xcb_get_image_data_length(reply);
+
+	if (data_length != 4) {
+		dief("invalid pixel format received, expected: 32bpp got: %dbpp",
+				data_length * 8);
+	}
+
 	color = data[2] << 16 | data[1] << 8 | data[0];
 
 	free(reply);
