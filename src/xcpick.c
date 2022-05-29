@@ -198,6 +198,7 @@ main(int argc, char **argv)
 	}
 
 	xcb_connection_t *connection;
+	xcb_grab_pointer_reply_t *gpr;
 	xcb_screen_t *screen;
 	xcb_window_t window;
 	xcb_cursor_t cursor;
@@ -218,24 +219,31 @@ main(int argc, char **argv)
 		die("can't get default screen");
 	}
 
-	window = xcb_generate_id(connection);
 	cursor = xcb_load_cursor(connection, XC_GOBBLER);
 
+	gpr = xcb_grab_pointer_reply(
+		connection,
+		xcb_grab_pointer_unchecked(
+			connection, 0, screen->root,
+			XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
+			XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
+			cursor, XCB_CURRENT_TIME
+		),
+		NULL
+	);
+
+	if (gpr->status != XCB_GRAB_STATUS_SUCCESS) {
+		die("can't grab pointer");
+	}
+
+	free(gpr);
+
+	window = xcb_generate_id(connection);
 	exit_status = 0;
 	print_newline = isatty(STDOUT_FILENO);
 	pointer_position = xcb_get_pointer_position(connection, screen->root);
-	fill_color = xcb_get_color_at(
-		connection, screen->root,
-		pointer_position.x, pointer_position.y
-	);
+	fill_color = xcb_get_color_at(connection, screen->root, pointer_position.x, pointer_position.y);
 	border_color = 0xffffff;
-
-	xcb_grab_pointer(
-		connection, 0, screen->root,
-		XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
-		XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
-		cursor, XCB_CURRENT_TIME
-	);
 
 	xcb_create_window(
 		connection, XCB_COPY_FROM_PARENT,
