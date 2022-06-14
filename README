@@ -2,6 +2,10 @@ xcpick
 ======
 simple X11 color picker, preview: https://i.imgur.com/2UGdxrQ.mp4
 
+todo
+====
+multiscreen support
+
 build
 =====
 in order to build xcpick you will need xcb headers
