@@ -187,16 +187,6 @@ xcb_get_color_at(xcb_connection_t *connection, xcb_window_t window, int16_t x, i
 int
 main(int argc, char **argv)
 {
-	/* skip program name */
-	--argc; ++argv;
-
-	if (argc > 0) {
-		if (match_opt(*argv, "-h", "--help")) usage();
-		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (**argv == '-') dief("invalid option %s", *argv);
-		else dief("unexpected argument: %s", *argv);
-	}
-
 	xcb_connection_t *connection;
 	xcb_grab_pointer_reply_t *gpr;
 	xcb_screen_t *screen;
@@ -209,6 +199,13 @@ main(int argc, char **argv)
 	point_t pointer_position;
 	bool print_newline;
 	int exit_status;
+
+	if (++argv, --argc > 0) {
+		if (match_opt(*argv, "-h", "--help")) usage();
+		else if (match_opt(*argv, "-v", "--version")) version();
+		else if (**argv == '-') dief("invalid option %s", *argv);
+		else dief("unexpected argument: %s", *argv);
+	}
 
 	if (xcb_connection_has_error(connection = xcb_connect(NULL, NULL))) {
 		die("can't open display");
