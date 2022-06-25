@@ -263,61 +263,61 @@ main(int argc, char **argv)
 
 	while ((ev = xcb_wait_for_event(connection))) {
 		switch (ev->response_type & ~0x80) {
-		case XCB_MOTION_NOTIFY:
-			mnev = (xcb_motion_notify_event_t *)(ev);
+			case XCB_MOTION_NOTIFY:
+				mnev = (xcb_motion_notify_event_t *)(ev);
 
-			fill_color = get_color_at(
-				connection, screen->root,
-				mnev->event_x, mnev->event_y
-			);
+				fill_color = get_color_at(
+					connection, screen->root,
+					mnev->event_x, mnev->event_y
+				);
 
-			xcb_change_window_attributes(
-				connection, window,
-				XCB_CW_BACK_PIXEL, &fill_color
-			);
+				xcb_change_window_attributes(
+					connection, window,
+					XCB_CW_BACK_PIXEL, &fill_color
+				);
 
-			xcb_clear_area(connection, 0, window, 0, 0, 44, 44);
+				xcb_clear_area(connection, 0, window, 0, 0, 44, 44);
 
-			xcb_configure_window(
-				connection, window,
-				XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
-				(const uint32_t[2]) {
-					mnev->event_x < 25 ?
-						25 :
-						(mnev->event_x >= screen->width_in_pixels - 75 ?
-							screen->width_in_pixels - 75 :
-							mnev->event_x
-						),
-					mnev->event_y >= screen->height_in_pixels - 75 ?
-						mnev->event_y - 75 :
-						mnev->event_y + 25,
+				xcb_configure_window(
+					connection, window,
+					XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
+					(const uint32_t[2]) {
+						mnev->event_x < 25 ?
+							25 :
+							(mnev->event_x >= screen->width_in_pixels - 75 ?
+								screen->width_in_pixels - 75 :
+								mnev->event_x
+							),
+						mnev->event_y >= screen->height_in_pixels - 75 ?
+							mnev->event_y - 75 :
+							mnev->event_y + 25,
+					}
+				);
+
+				xcb_flush(connection);
+				break;
+			case XCB_BUTTON_PRESS:
+				bpev = (xcb_button_press_event_t *)(ev);
+
+				switch (bpev->detail) {
+					case XCB_BUTTON_INDEX_1:
+						printf("%06x%s", fill_color, print_newline ? "\n" : "");
+						free(ev);
+						goto end;
+						break;
+					case XCB_BUTTON_INDEX_2:
+					case XCB_BUTTON_INDEX_3:
+						exit_status = 2;
+						free(ev);
+						goto end;
+						break;
+					default:
+						break;
 				}
-			);
 
-			xcb_flush(connection);
-			break;
-		case XCB_BUTTON_PRESS:
-			bpev = (xcb_button_press_event_t *)(ev);
-
-			switch (bpev->detail) {
-				case XCB_BUTTON_INDEX_1:
-					printf("%06x%s", fill_color, print_newline ? "\n" : "");
-					free(ev);
-					goto end;
-					break;
-				case XCB_BUTTON_INDEX_2:
-				case XCB_BUTTON_INDEX_3:
-					exit_status = 2;
-					free(ev);
-					goto end;
-					break;
-				default:
-					break;
-			}
-
-			break;
-		default:
-			break;
+				break;
+			default:
+				break;
 		}
 
 		free(ev);
