@@ -1,21 +1,20 @@
-VERSION = 0.2.1-rev+${shell git rev-parse --short=16 HEAD}
-PREFIX = /usr/local
-MANPREFIX = ${PREFIX}/share/man
-LDLIBS = -lxcb
+VERSION = 0.2.1
+
+CC      = cc
+CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Os -DVERSION=\"${VERSION}\"
+LDLIBS  = -lxcb
 LDFLAGS = -s ${LDLIBS}
-INCS = -I/usr/include
-CFLAGS = -std=c99 -pedantic -Wall -Wextra -Os ${INCS} -DVERSION="\"${VERSION}\""
-CC = cc
 
-SRC = src/xcpick.c \
-	  src/debug.c
+PREFIX    = /usr/local
+MANPREFIX = ${PREFIX}/share/man
 
-OBJ = ${SRC:.c=.o}
+SRC = xcpick.c
+OBJ = xcpick.o
 
 all: xcpick
 
-${OBJ}:	src/debug.h \
-		src/cursorfont.h
+.c.o:
+	${CC} -c $< ${CFLAGS}
 
 xcpick: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
@@ -25,12 +24,12 @@ install: all
 	cp -f xcpick ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/xcpick
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	cp -f man/xcpick.1 ${DESTDIR}${MANPREFIX}/man1
+	cp -f xcpick.1 ${DESTDIR}${MANPREFIX}/man1
 	chmod 644 ${DESTDIR}${MANPREFIX}/man1/xcpick.1
 
 dist: clean
 	mkdir -p xcpick-${VERSION}
-	cp -R LICENSE Makefile README man src xcpick-${VERSION}
+	cp -R LICENSE Makefile README xcpick.1 xcpick.c xcpick-${VERSION}
 	tar -cf xcpick-${VERSION}.tar xcpick-${VERSION}
 	gzip xcpick-${VERSION}.tar
 	rm -rf xcpick-${VERSION}
