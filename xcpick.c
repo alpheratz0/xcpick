@@ -42,7 +42,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -214,7 +213,7 @@ main(int argc, char **argv)
 	xcb_button_press_event_t *bpev;
 	uint32_t fill_color, border_color;
 	xcb_point_t pointer_position;
-	bool print_newline;
+	int print_newline;
 	int exit_status;
 
 	if (++argv, --argc > 0) {
@@ -267,7 +266,7 @@ main(int argc, char **argv)
 		(const uint32_t[3]) {
 			fill_color,
 			border_color,
-			true
+			1
 		}
 	);
 
