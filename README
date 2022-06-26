@@ -1,16 +1,19 @@
-xcpick
-======
-simple X11 color picker, preview: https://i.imgur.com/2UGdxrQ.mp4
+]|~ xcpick ~|[
 
-todo
-====
-multiscreen support
+Simple X11 color picker.
 
-build
-=====
-in order to build xcpick you will need xcb headers
+]|~ build ~|[
+
+In order to build xcpick you will need xcb headers.
 $ make
 
-install
-=======
-# make install
+]|~ TODO ~|[
+
+Add multiscreen support.
+
+]|~ license ~|[
+
+This program is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License
+version 2 as published by the Free Software Foundation.
+See LICENSE for more details.
