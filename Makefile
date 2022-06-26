@@ -8,16 +8,13 @@ LDFLAGS = -s ${LDLIBS}
 PREFIX    = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
-SRC = xcpick.c
-OBJ = xcpick.o
-
 all: xcpick
 
 .c.o:
 	${CC} -c $< ${CFLAGS}
 
-xcpick: ${OBJ}
-	${CC} -o $@ ${OBJ} ${LDFLAGS}
+xcpick: xcpick.o
+	${CC} -o $@ $< ${LDFLAGS}
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
@@ -39,6 +36,6 @@ uninstall:
 	rm -f ${DESTDIR}${MANPREFIX}/man1/xcpick.1
 
 clean:
-	rm -f xcpick xcpick-${VERSION}.tar.gz ${OBJ}
+	rm -f xcpick xcpick.o xcpick-${VERSION}.tar.gz
 
 .PHONY: all clean install uninstall dist
