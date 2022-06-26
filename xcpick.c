@@ -41,6 +41,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -48,10 +49,27 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-#include "debug.h"
-#include "cursorfont.h"
-
+#define XC_GOBBLER (54)
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
+
+static void
+die(const char *err)
+{
+	fprintf(stderr, "xcpick: %s\n", err);
+	exit(1);
+}
+
+static void
+dief(const char *err, ...)
+{
+	va_list list;
+	fputs("xcpick: ", stderr);
+	va_start(list, err);
+	vfprintf(stderr, err, list);
+	va_end(list);
+	fputc('\n', stderr);
+	exit(1);
+}
 
 static inline void
 print_opt(const char *sh, const char *lo, const char *desc)
