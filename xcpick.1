@@ -1,48 +1,51 @@
-.TH XCPICK 1 "April 21, 2022"
-.SH NAME
-xcpick \- simple X11 color picker.
-.SH SYNOPSIS
-\fBxcpick\fP [ -hv ]
-.SH OPTIONS
-.TP
-\fB\-h\fR, \fB\-\-help\fR
-show the help message and exit
-.TP
-\fB\-v\fR, \fB\-\-version\fR
+.Dd August 8, 2022
+.Dt XCPICK 1
+.Sh NAME
+.Nm xcpick
+.Nd simple color picker for X
+.Sh SYNOPSIS
+.Nm
+.Op Fl hHv
+.Op Fl p Ar prefix
+.Sh DESCRIPTION
+The
+.Nm
+application lets you pick any color from the screen.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl h
+show usage
+.It Fl H
+set prefix to the hash symbol (same as -p '#')
+.It Fl v
 display the program version
-.SH CONTROLS
-.TP
-\fBleft click\fR
-pick a color
-.TP
-\fBmiddle/right click\fR
-do not pick a color
-.SH EXAMPLES
-.TP
-\fBcopy the selected color to the clipboard\fR
+.It Fl p
+set output prefix
+.El
+.Sh EXAMPLES
+.Bl -tag -width indent
+.It copy the selected color to the clipboard
 xcpick | xclip -i -sel clipboard
-.TP
-\fBshow a notification on the screen with the selected color\fR
+.It show a notification on the screen with the selected color
 xcpick | xargs -I{} notify-send 'xcpick' '{}'
-.SH EXIT STATUS
-.TP
-\fB0\fR
+.It see much bigger preview of the selected color
+xcpick -H | xranco -l /dev/stdin
+.It print selected color prefixed with 0x
+xcpick -p 0x
+.El
+.Sh EXIT STATUS
+.Bl -tag -width indent
+.It 0
 a color has been picked
-.TP
-\fB1\fR
+.It 1
 an error occurred
-.TP
-\fB2\fR
+.It 2
 no color has been picked
-.SH AUTHOR
-Written by alpheratz0.
-.SH COPYRIGHT
-Copyright \(co 2022 <alpheratz99@protonmail.com>
-.br
-License GPLv2.0: GNU GPL version 2.0 <https://gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
-.br
-This is free software: you are free to change and redistribute it.
-.br
-There is NO WARRANTY, to the extent permitted by law.
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr X 7
+.Xr xranco 1
+.Sh AUTHORS
+.An alpheratz0 Aq Mt alpheratz99@protonmail.com
+.Sh BUGS
 https://github.com/alpheratz0/xcpick/issues
