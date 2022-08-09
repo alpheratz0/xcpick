@@ -81,12 +81,6 @@ enotnull(const char *str, const char *name)
 	return str;
 }
 
-static inline void
-print_opt(const char *sh, const char *lo, const char *desc)
-{
-	printf("%7s | %-25s %s\n", sh, lo, desc);
-}
-
 static void
 usage(void)
 {
