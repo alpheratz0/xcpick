@@ -59,15 +59,26 @@ die(const char *err)
 }
 
 static void
-dief(const char *err, ...)
+dief(const char *fmt, ...)
 {
-	va_list list;
+	va_list args;
+
 	fputs("xcpick: ", stderr);
-	va_start(list, err);
-	vfprintf(stderr, err, list);
-	va_end(list);
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	va_end(args);
 	fputc('\n', stderr);
 	exit(1);
+}
+
+static const char *
+enotnull(const char *str, const char *name)
+{
+	if (NULL == str) {
+		dief("%s cannot be null", name);
+	}
+
+	return str;
 }
 
 static inline void
@@ -76,19 +87,10 @@ print_opt(const char *sh, const char *lo, const char *desc)
 	printf("%7s | %-25s %s\n", sh, lo, desc);
 }
 
-static int
-match_opt(const char *in, const char *sh, const char *lo)
-{
-	return (strcmp(in, sh) == 0) || (strcmp(in, lo) == 0);
-}
-
 static void
 usage(void)
 {
-	puts("Usage: xcpick [ -hv ]");
-	puts("Options are:");
-	print_opt("-h", "--help", "display this message and exit");
-	print_opt("-v", "--version", "display the program version");
+	puts("usage: xcpick [-hHv] [-p prefix]");
 	exit(0);
 }
 
@@ -215,10 +217,13 @@ main(int argc, char **argv)
 	xcb_point_t pointer_position;
 	int print_newline;
 	int exit_status;
+	const char *prefix = "";
 
 	if (++argv, --argc > 0) {
-		if (match_opt(*argv, "-h", "--help")) usage();
-		else if (match_opt(*argv, "-v", "--version")) version();
+		if (!strcmp(*argv, "-h")) usage();
+		else if (!strcmp(*argv, "-v")) version();
+		else if (!strcmp(*argv, "-p")) --argc, prefix = enotnull(*++argv, "prefix");
+		else if (!strcmp(*argv, "-H")) prefix = "#";
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
@@ -318,7 +323,7 @@ main(int argc, char **argv)
 
 				switch (bpev->detail) {
 					case XCB_BUTTON_INDEX_1:
-						printf("%06x%s", fill_color, print_newline ? "\n" : "");
+						printf("%s%06x%s", prefix, fill_color, print_newline ? "\n" : "");
 						free(ev);
 						goto end;
 						break;
