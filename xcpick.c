@@ -51,6 +51,14 @@
 #define XC_GOBBLER (54)
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
+static xcb_connection_t *conn;
+static xcb_screen_t *screen;
+static xcb_window_t window;
+static xcb_cursor_t cursor;
+static uint32_t color;
+static xcb_point_t pos;
+static const char *prefix = "";
+
 static void
 die(const char *err)
 {
@@ -96,15 +104,15 @@ version(void)
 }
 
 static xcb_point_t
-get_pointer_position(xcb_connection_t *conn, xcb_window_t window)
+get_pointer_position(void)
 {
-	xcb_point_t position;
+	xcb_point_t pos;
 	xcb_query_pointer_cookie_t cookie;
 	xcb_query_pointer_reply_t *reply;
 	xcb_generic_error_t *error;
 
 	error = NULL;
-	cookie = xcb_query_pointer(conn, window);
+	cookie = xcb_query_pointer(conn, screen->root);
 	reply = xcb_query_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error) {
@@ -112,16 +120,16 @@ get_pointer_position(xcb_connection_t *conn, xcb_window_t window)
 				(int)(error->error_code));
 	}
 
-	position.x = reply->root_x;
-	position.y = reply->root_y;
+	pos.x = reply->root_x;
+	pos.y = reply->root_y;
 
 	free(reply);
 
-	return position;
+	return pos;
 }
 
 static xcb_cursor_t
-load_cursor(xcb_connection_t *conn, int16_t id)
+load_cursor(int16_t id)
 {
 	xcb_font_t font;
 	xcb_cursor_t cursor;
@@ -156,10 +164,7 @@ load_cursor(xcb_connection_t *conn, int16_t id)
 }
 
 static uint32_t
-get_color_at(xcb_connection_t *conn,
-             xcb_window_t window,
-             int16_t x,
-             int16_t y)
+get_color_at(int16_t x, int16_t y)
 {
 	xcb_get_image_reply_t *reply;
 	xcb_get_image_cookie_t cookie;
@@ -171,7 +176,7 @@ get_color_at(xcb_connection_t *conn,
 	error = NULL;
 	cookie = xcb_get_image(
 		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,
-		window, x, y, 1, 1, XCB_PLANES_ALL_PLANES
+		screen->root, x, y, 1, 1, XCB_PLANES_ALL_PLANES
 	);
 
 	reply = xcb_get_image_reply(conn, cookie, &error);
@@ -196,32 +201,9 @@ get_color_at(xcb_connection_t *conn,
 	return color;
 }
 
-int
-main(int argc, char **argv)
+static void
+create_window(void)
 {
-	xcb_connection_t *conn;
-	xcb_grab_pointer_reply_t *gpr;
-	xcb_screen_t *screen;
-	xcb_window_t window;
-	xcb_cursor_t cursor;
-	xcb_generic_event_t *ev;
-	xcb_motion_notify_event_t *mnev;
-	xcb_button_press_event_t *bpev;
-	uint32_t fill_color, border_color;
-	xcb_point_t pointer_position;
-	int print_newline;
-	int exit_status;
-	const char *prefix = "";
-
-	if (++argv, --argc > 0) {
-		if (!strcmp(*argv, "-h")) usage();
-		else if (!strcmp(*argv, "-v")) version();
-		else if (!strcmp(*argv, "-p")) --argc, prefix = enotnull(*++argv, "prefix");
-		else if (!strcmp(*argv, "-H")) prefix = "#";
-		else if (**argv == '-') dief("invalid option %s", *argv);
-		else dief("unexpected argument: %s", *argv);
-	}
-
 	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL))) {
 		die("can't open display");
 	}
@@ -231,40 +213,18 @@ main(int argc, char **argv)
 		die("can't get default screen");
 	}
 
-	cursor = load_cursor(conn, XC_GOBBLER);
-
-	gpr = xcb_grab_pointer_reply(
-		conn,
-		xcb_grab_pointer_unchecked(
-			conn, 0, screen->root,
-			XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
-			XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
-			cursor, XCB_CURRENT_TIME
-		),
-		NULL
-	);
-
-	if (gpr->status != XCB_GRAB_STATUS_SUCCESS) {
-		die("can't grab pointer");
-	}
-
-	free(gpr);
-
 	window = xcb_generate_id(conn);
-	exit_status = 0;
-	print_newline = isatty(STDOUT_FILENO);
-	pointer_position = get_pointer_position(conn, screen->root);
-	fill_color = get_color_at(conn, screen->root, pointer_position.x, pointer_position.y);
-	border_color = 0xffffff;
+	pos = get_pointer_position();
+	color = get_color_at(pos.x, pos.y);
 
 	xcb_create_window(
 		conn, XCB_COPY_FROM_PARENT,
-		window, screen->root, pointer_position.x, pointer_position.y + 25,
+		window, screen->root, pos.x, pos.y + 25,
 		44, 44, 3, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
 		XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
 		(const uint32_t[3]) {
-			fill_color,
-			border_color,
+			color,
+			0xffffff,
 			1
 		}
 	);
@@ -276,68 +236,117 @@ main(int argc, char **argv)
 
 	xcb_map_window(conn, window);
 	xcb_flush(conn);
+}
+
+static void
+destroy_window(void)
+{
+	xcb_free_cursor(conn, cursor);
+	xcb_disconnect(conn);
+}
+
+static void
+grab_pointer(void)
+{
+	xcb_generic_error_t *error;
+	xcb_grab_pointer_cookie_t cookie;
+	xcb_grab_pointer_reply_t *reply;
+
+	cursor = load_cursor(XC_GOBBLER);
+	error = NULL;
+
+	cookie = xcb_grab_pointer(
+		conn, 0, screen->root,
+		XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
+		XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
+		cursor, XCB_CURRENT_TIME
+	);
+
+	reply = xcb_grab_pointer_reply(conn, cookie, &error);
+
+	if (NULL != error) {
+		dief("xcb_grab_pointer failed with error code: %d",
+				(int)(error->error_code));
+	}
+
+	if (reply->status != XCB_GRAB_STATUS_SUCCESS) {
+		die("can't grab pointer");
+	}
+
+	free(reply);
+}
+
+static void
+h_motion_notify(xcb_motion_notify_event_t *ev)
+{
+	color = get_color_at(ev->event_x, ev->event_y);
+
+	xcb_change_window_attributes(conn, window, XCB_CW_BACK_PIXEL, &color);
+	xcb_clear_area(conn, 0, window, 0, 0, 44, 44);
+
+	xcb_configure_window(
+		conn, window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
+		(const uint32_t[]) {
+			ev->event_x < 25 ?
+				25 :
+				ev->event_x >= screen->width_in_pixels - 75 ?
+					screen->width_in_pixels - 75 :
+					ev->event_x,
+			ev->event_y >= screen->height_in_pixels - 75 ?
+				ev->event_y - 75 :
+				ev->event_y + 25,
+		}
+	);
+
+	xcb_flush(conn);
+}
+
+static void
+h_button_press(xcb_button_press_event_t *ev)
+{
+	switch (ev->detail) {
+		case XCB_BUTTON_INDEX_1:
+			printf("%s%06x%s", prefix, color, isatty(STDOUT_FILENO) ? "\n" : "");
+			destroy_window();
+			exit(0);
+			break;
+		case XCB_BUTTON_INDEX_2:
+		case XCB_BUTTON_INDEX_3:
+			destroy_window();
+			exit(2);
+			break;
+	}
+}
+
+int
+main(int argc, char **argv)
+{
+	xcb_generic_event_t *ev;
+
+	if (++argv, --argc > 0) {
+		if (!strcmp(*argv, "-h")) usage();
+		else if (!strcmp(*argv, "-v")) version();
+		else if (!strcmp(*argv, "-p")) --argc, prefix = enotnull(*++argv, "prefix");
+		else if (!strcmp(*argv, "-H")) prefix = "#";
+		else if (**argv == '-') dief("invalid option %s", *argv);
+		else dief("unexpected argument: %s", *argv);
+	}
+
+	create_window();
+	grab_pointer();
 
 	while ((ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
 			case XCB_MOTION_NOTIFY:
-				mnev = (xcb_motion_notify_event_t *)(ev);
-
-				fill_color = get_color_at(
-					conn, screen->root,
-					mnev->event_x, mnev->event_y
-				);
-
-				xcb_change_window_attributes(
-					conn, window,
-					XCB_CW_BACK_PIXEL, &fill_color
-				);
-
-				xcb_clear_area(conn, 0, window, 0, 0, 44, 44);
-
-				xcb_configure_window(
-					conn, window,
-					XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
-					(const uint32_t[2]) {
-						mnev->event_x < 25 ?
-							25 :
-							(mnev->event_x >= screen->width_in_pixels - 75 ?
-								screen->width_in_pixels - 75 :
-								mnev->event_x
-							),
-						mnev->event_y >= screen->height_in_pixels - 75 ?
-							mnev->event_y - 75 :
-							mnev->event_y + 25,
-					}
-				);
-
-				xcb_flush(conn);
+				h_motion_notify((xcb_motion_notify_event_t *)(ev));
 				break;
 			case XCB_BUTTON_PRESS:
-				bpev = (xcb_button_press_event_t *)(ev);
-
-				switch (bpev->detail) {
-					case XCB_BUTTON_INDEX_1:
-						printf("%s%06x%s", prefix, fill_color, print_newline ? "\n" : "");
-						free(ev);
-						goto end;
-						break;
-					case XCB_BUTTON_INDEX_2:
-					case XCB_BUTTON_INDEX_3:
-						exit_status = 2;
-						free(ev);
-						goto end;
-						break;
-				}
-
+				h_button_press((xcb_button_press_event_t *)(ev));
 				break;
 		}
 
 		free(ev);
 	}
 
-end:
-	xcb_free_cursor(conn, cursor);
-	xcb_disconnect(conn);
-
-	return exit_status;
+	return 0;
 }
