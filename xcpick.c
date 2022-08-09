@@ -96,7 +96,7 @@ version(void)
 }
 
 static xcb_point_t
-get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
+get_pointer_position(xcb_connection_t *conn, xcb_window_t window)
 {
 	xcb_point_t position;
 	xcb_query_pointer_cookie_t cookie;
@@ -104,8 +104,8 @@ get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
 	xcb_generic_error_t *error;
 
 	error = NULL;
-	cookie = xcb_query_pointer(connection, window);
-	reply = xcb_query_pointer_reply(connection, cookie, &error);
+	cookie = xcb_query_pointer(conn, window);
+	reply = xcb_query_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error) {
 		dief("xcb_query_pointer failed with error code: %d",
@@ -121,17 +121,17 @@ get_pointer_position(xcb_connection_t *connection, xcb_window_t window)
 }
 
 static xcb_cursor_t
-load_cursor(xcb_connection_t *connection, int16_t id)
+load_cursor(xcb_connection_t *conn, int16_t id)
 {
 	xcb_font_t font;
 	xcb_cursor_t cursor;
 	xcb_void_cookie_t cookie;
 	xcb_generic_error_t *error;
 
-	font = xcb_generate_id(connection);
-	cursor = xcb_generate_id(connection);
-	cookie = xcb_open_font_checked(connection, font, strlen("cursor"), "cursor");
-	error = xcb_request_check(connection, cookie);
+	font = xcb_generate_id(conn);
+	cursor = xcb_generate_id(conn);
+	cookie = xcb_open_font_checked(conn, font, strlen("cursor"), "cursor");
+	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error) {
 		dief("xcb_open_font failed with error code: %d",
@@ -139,24 +139,24 @@ load_cursor(xcb_connection_t *connection, int16_t id)
 	}
 
 	cookie = xcb_create_glyph_cursor_checked(
-		connection, cursor, font, font,
+		conn, cursor, font, font,
 		id, id + 1, 0xffff, 0xffff, 0xffff, 0, 0, 0
 	);
 
-	error = xcb_request_check(connection, cookie);
+	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error) {
 		dief("xcb_create_glyph_cursor failed with error code: %d",
 				(int)(error->error_code));
 	}
 
-	xcb_close_font(connection, font);
+	xcb_close_font(conn, font);
 
 	return cursor;
 }
 
 static uint32_t
-get_color_at(xcb_connection_t *connection,
+get_color_at(xcb_connection_t *conn,
              xcb_window_t window,
              int16_t x,
              int16_t y)
@@ -170,11 +170,11 @@ get_color_at(xcb_connection_t *connection,
 
 	error = NULL;
 	cookie = xcb_get_image(
-		connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
+		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,
 		window, x, y, 1, 1, XCB_PLANES_ALL_PLANES
 	);
 
-	reply = xcb_get_image_reply(connection, cookie, &error);
+	reply = xcb_get_image_reply(conn, cookie, &error);
 
 	if (NULL != error) {
 		dief("xcb_get_image failed with error code: %d",
@@ -199,7 +199,7 @@ get_color_at(xcb_connection_t *connection,
 int
 main(int argc, char **argv)
 {
-	xcb_connection_t *connection;
+	xcb_connection_t *conn;
 	xcb_grab_pointer_reply_t *gpr;
 	xcb_screen_t *screen;
 	xcb_window_t window;
@@ -222,21 +222,21 @@ main(int argc, char **argv)
 		else dief("unexpected argument: %s", *argv);
 	}
 
-	if (xcb_connection_has_error(connection = xcb_connect(NULL, NULL))) {
+	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL))) {
 		die("can't open display");
 	}
 
-	if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data)) {
-		xcb_disconnect(connection);
+	if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data)) {
+		xcb_disconnect(conn);
 		die("can't get default screen");
 	}
 
-	cursor = load_cursor(connection, XC_GOBBLER);
+	cursor = load_cursor(conn, XC_GOBBLER);
 
 	gpr = xcb_grab_pointer_reply(
-		connection,
+		conn,
 		xcb_grab_pointer_unchecked(
-			connection, 0, screen->root,
+			conn, 0, screen->root,
 			XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
 			XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
 			cursor, XCB_CURRENT_TIME
@@ -250,15 +250,15 @@ main(int argc, char **argv)
 
 	free(gpr);
 
-	window = xcb_generate_id(connection);
+	window = xcb_generate_id(conn);
 	exit_status = 0;
 	print_newline = isatty(STDOUT_FILENO);
-	pointer_position = get_pointer_position(connection, screen->root);
-	fill_color = get_color_at(connection, screen->root, pointer_position.x, pointer_position.y);
+	pointer_position = get_pointer_position(conn, screen->root);
+	fill_color = get_color_at(conn, screen->root, pointer_position.x, pointer_position.y);
 	border_color = 0xffffff;
 
 	xcb_create_window(
-		connection, XCB_COPY_FROM_PARENT,
+		conn, XCB_COPY_FROM_PARENT,
 		window, screen->root, pointer_position.x, pointer_position.y + 25,
 		44, 44, 3, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
 		XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
@@ -270,32 +270,32 @@ main(int argc, char **argv)
 	);
 
 	xcb_change_property(
-		connection, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
+		conn, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
 		XCB_ATOM_STRING, 8, strlen("xcpick"), "xcpick"
 	);
 
-	xcb_map_window(connection, window);
-	xcb_flush(connection);
+	xcb_map_window(conn, window);
+	xcb_flush(conn);
 
-	while ((ev = xcb_wait_for_event(connection))) {
+	while ((ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
 			case XCB_MOTION_NOTIFY:
 				mnev = (xcb_motion_notify_event_t *)(ev);
 
 				fill_color = get_color_at(
-					connection, screen->root,
+					conn, screen->root,
 					mnev->event_x, mnev->event_y
 				);
 
 				xcb_change_window_attributes(
-					connection, window,
+					conn, window,
 					XCB_CW_BACK_PIXEL, &fill_color
 				);
 
-				xcb_clear_area(connection, 0, window, 0, 0, 44, 44);
+				xcb_clear_area(conn, 0, window, 0, 0, 44, 44);
 
 				xcb_configure_window(
-					connection, window,
+					conn, window,
 					XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
 					(const uint32_t[2]) {
 						mnev->event_x < 25 ?
@@ -310,7 +310,7 @@ main(int argc, char **argv)
 					}
 				);
 
-				xcb_flush(connection);
+				xcb_flush(conn);
 				break;
 			case XCB_BUTTON_PRESS:
 				bpev = (xcb_button_press_event_t *)(ev);
@@ -336,8 +336,8 @@ main(int argc, char **argv)
 	}
 
 end:
-	xcb_free_cursor(connection, cursor);
-	xcb_disconnect(connection);
+	xcb_free_cursor(conn, cursor);
+	xcb_disconnect(conn);
 
 	return exit_status;
 }
