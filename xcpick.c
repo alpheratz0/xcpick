@@ -194,7 +194,7 @@ get_color_at(int16_t x, int16_t y)
 				data_length * 8);
 	}
 
-	color = data[2] << 16 | data[1] << 8 | data[0];
+	color = *(uint32_t *)(data) & 0xffffff;
 
 	free(reply);
 
