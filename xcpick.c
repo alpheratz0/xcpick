@@ -111,7 +111,6 @@ get_pointer_position(void)
 	xcb_query_pointer_reply_t *reply;
 	xcb_generic_error_t *error;
 
-	error = NULL;
 	cookie = xcb_query_pointer(conn, screen->root);
 	reply = xcb_query_pointer_reply(conn, cookie, &error);
 
@@ -173,7 +172,6 @@ get_color_at(int16_t x, int16_t y)
 	int data_length;
 	uint8_t *data;
 
-	error = NULL;
 	cookie = xcb_get_image(
 		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,
 		screen->root, x, y, 1, 1, XCB_PLANES_ALL_PLANES
@@ -253,7 +251,6 @@ grab_pointer(void)
 	xcb_grab_pointer_reply_t *reply;
 
 	cursor = load_cursor(XC_GOBBLER);
-	error = NULL;
 
 	cookie = xcb_grab_pointer(
 		conn, 0, screen->root,
