@@ -29,7 +29,7 @@ install: all
 
 dist: clean
 	mkdir -p xcpick-$(VERSION)
-	cp -R LICENSE Makefile README xcpick.1 xcpick.c xcpick-$(VERSION)
+	cp -R COPYING Makefile README xcpick.1 xcpick.c xcpick-$(VERSION)
 	tar -cf xcpick-$(VERSION).tar xcpick-$(VERSION)
 	gzip xcpick-$(VERSION).tar
 	rm -rf xcpick-$(VERSION)
