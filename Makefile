@@ -1,15 +1,7 @@
 .POSIX:
 .PHONY: all clean install uninstall dist
 
-VERSION = 0.2.1
-
-CC      = cc
-CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Os -DVERSION=\"$(VERSION)\"
-LDLIBS  = -lxcb
-LDFLAGS = -s
-
-PREFIX    = /usr/local
-MANPREFIX = $(PREFIX)/share/man
+include config.mk
 
 all: xcpick
 
@@ -29,7 +21,7 @@ install: all
 
 dist: clean
 	mkdir -p xcpick-$(VERSION)
-	cp -R COPYING Makefile README xcpick.1 xcpick.c xcpick-$(VERSION)
+	cp -R COPYING config.mk Makefile README xcpick.1 xcpick.c xcpick-$(VERSION)
 	tar -cf xcpick-$(VERSION).tar xcpick-$(VERSION)
 	gzip xcpick-$(VERSION).tar
 	rm -rf xcpick-$(VERSION)
