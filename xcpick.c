@@ -82,10 +82,8 @@ dief(const char *fmt, ...)
 static const char *
 enotnull(const char *str, const char *name)
 {
-	if (NULL == str) {
+	if (NULL == str)
 		dief("%s cannot be null", name);
-	}
-
 	return str;
 }
 
@@ -114,10 +112,9 @@ get_pointer_position(void)
 	cookie = xcb_query_pointer(conn, screen->root);
 	reply = xcb_query_pointer_reply(conn, cookie, &error);
 
-	if (NULL != error) {
+	if (NULL != error)
 		dief("xcb_query_pointer failed with error code: %d",
 				(int)(error->error_code));
-	}
 
 	pos.x = reply->root_x;
 	pos.y = reply->root_y;
@@ -140,10 +137,9 @@ load_cursor(int16_t id)
 	cookie = xcb_open_font_checked(conn, font, strlen("cursor"), "cursor");
 	error = xcb_request_check(conn, cookie);
 
-	if (NULL != error) {
+	if (NULL != error)
 		dief("xcb_open_font failed with error code: %d",
 				(int)(error->error_code));
-	}
 
 	cookie = xcb_create_glyph_cursor_checked(
 		conn, cursor, font, font,
@@ -152,10 +148,9 @@ load_cursor(int16_t id)
 
 	error = xcb_request_check(conn, cookie);
 
-	if (NULL != error) {
+	if (NULL != error)
 		dief("xcb_create_glyph_cursor failed with error code: %d",
 				(int)(error->error_code));
-	}
 
 	xcb_close_font(conn, font);
 
@@ -179,18 +174,16 @@ get_color_at(int16_t x, int16_t y)
 
 	reply = xcb_get_image_reply(conn, cookie, &error);
 
-	if (NULL != error) {
+	if (NULL != error)
 		dief("xcb_get_image failed with error code: %d",
 				(int)(error->error_code));
-	}
 
 	data = xcb_get_image_data(reply);
 	data_length = xcb_get_image_data_length(reply);
 
-	if (data_length != 4) {
+	if (data_length != 4)
 		dief("invalid pixel format received, expected: 32bpp got: %dbpp",
 				data_length * 8);
-	}
 
 	color = *(uint32_t *)(data) & 0xffffff;
 
@@ -202,29 +195,26 @@ get_color_at(int16_t x, int16_t y)
 static void
 create_window(void)
 {
-	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL))) {
+	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL)))
 		die("can't open display");
-	}
 
-	if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data)) {
-		xcb_disconnect(conn);
+	if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data))
 		die("can't get default screen");
-	}
 
 	window = xcb_generate_id(conn);
 	pos = get_pointer_position();
 	color = get_color_at(pos.x, pos.y);
 
-	xcb_create_window(
+	xcb_create_window_aux(
 		conn, XCB_COPY_FROM_PARENT,
 		window, screen->root, pos.x, pos.y + 25,
 		44, 44, 3, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
 		XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
-		(const uint32_t[3]) {
-			color,
-			0xffffff,
-			1
-		}
+		(const xcb_create_window_value_list_t []) {{
+			.background_pixel = color,
+			.border_pixel = 0xffffff,
+			.override_redirect = 1
+		}}
 	);
 
 	xcb_change_property(
@@ -261,14 +251,12 @@ grab_pointer(void)
 
 	reply = xcb_grab_pointer_reply(conn, cookie, &error);
 
-	if (NULL != error) {
+	if (NULL != error)
 		dief("xcb_grab_pointer failed with error code: %d",
 				(int)(error->error_code));
-	}
 
-	if (reply->status != XCB_GRAB_STATUS_SUCCESS) {
+	if (reply->status != XCB_GRAB_STATUS_SUCCESS)
 		die("can't grab pointer");
-	}
 
 	free(reply);
 }
@@ -281,18 +269,18 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 	xcb_change_window_attributes(conn, window, XCB_CW_BACK_PIXEL, &color);
 	xcb_clear_area(conn, 0, window, 0, 0, 44, 44);
 
-	xcb_configure_window(
+	xcb_configure_window_aux(
 		conn, window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
-		(const uint32_t[]) {
-			ev->event_x < 25 ?
+		(const xcb_configure_window_value_list_t []) {{
+			.x = ev->event_x < 25 ?
 				25 :
 				ev->event_x >= screen->width_in_pixels - 75 ?
 					screen->width_in_pixels - 75 :
 					ev->event_x,
-			ev->event_y >= screen->height_in_pixels - 75 ?
+			.y = ev->event_y >= screen->height_in_pixels - 75 ?
 				ev->event_y - 75 :
 				ev->event_y + 25,
-		}
+		}}
 	);
 
 	xcb_flush(conn);
