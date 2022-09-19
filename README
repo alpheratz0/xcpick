@@ -1,13 +1,8 @@
-]|~ xcpick ~|[
+xcpick is a simple color picker for X.
+For more information about it's usage check `man xcpick`.
 
-Simple X11 color picker.
-
-]|~ build ~|[
-
-In order to build xcpick you will need xcb headers.
-$ make
-
-]|~ license ~|[
+This program requires libxcb to be installed.
+In order to build this program you need to run `make`.
 
 This program is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License
