@@ -60,14 +60,7 @@ static xcb_point_t pos;
 static const char *prefix = "";
 
 static void
-die(const char *err)
-{
-	fprintf(stderr, "xcpick: %s\n", err);
-	exit(1);
-}
-
-static void
-dief(const char *fmt, ...)
+die(const char *fmt, ...)
 {
 	va_list args;
 
@@ -83,7 +76,7 @@ static const char *
 enotnull(const char *str, const char *name)
 {
 	if (NULL == str)
-		dief("%s cannot be null", name);
+		die("%s cannot be null", name);
 	return str;
 }
 
@@ -113,7 +106,7 @@ get_pointer_position(void)
 	reply = xcb_query_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		dief("xcb_query_pointer failed with error code: %d",
+		die("xcb_query_pointer failed with error code: %d",
 				(int)(error->error_code));
 
 	pos.x = reply->root_x;
@@ -138,7 +131,7 @@ load_cursor(int16_t id)
 	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error)
-		dief("xcb_open_font failed with error code: %d",
+		die("xcb_open_font failed with error code: %d",
 				(int)(error->error_code));
 
 	cookie = xcb_create_glyph_cursor_checked(
@@ -149,7 +142,7 @@ load_cursor(int16_t id)
 	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error)
-		dief("xcb_create_glyph_cursor failed with error code: %d",
+		die("xcb_create_glyph_cursor failed with error code: %d",
 				(int)(error->error_code));
 
 	xcb_close_font(conn, font);
@@ -175,14 +168,14 @@ get_color_at(int16_t x, int16_t y)
 	reply = xcb_get_image_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		dief("xcb_get_image failed with error code: %d",
+		die("xcb_get_image failed with error code: %d",
 				(int)(error->error_code));
 
 	data = xcb_get_image_data(reply);
 	data_length = xcb_get_image_data_length(reply);
 
 	if (data_length != 4)
-		dief("invalid pixel format received, expected: 32bpp got: %dbpp",
+		die("invalid pixel format received, expected: 32bpp got: %dbpp",
 				data_length * 8);
 
 	color = *(uint32_t *)(data) & 0xffffff;
@@ -252,7 +245,7 @@ grab_pointer(void)
 	reply = xcb_grab_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		dief("xcb_grab_pointer failed with error code: %d",
+		die("xcb_grab_pointer failed with error code: %d",
 				(int)(error->error_code));
 
 	if (reply->status != XCB_GRAB_STATUS_SUCCESS)
@@ -308,13 +301,18 @@ main(int argc, char **argv)
 {
 	xcb_generic_event_t *ev;
 
-	if (++argv, --argc > 0) {
-		if (!strcmp(*argv, "-h")) usage();
-		else if (!strcmp(*argv, "-v")) version();
-		else if (!strcmp(*argv, "-p")) --argc, prefix = enotnull(*++argv, "prefix");
-		else if (!strcmp(*argv, "-H")) prefix = "#";
-		else if (**argv == '-') dief("invalid option %s", *argv);
-		else dief("unexpected argument: %s", *argv);
+	while (++argv, --argc > 0) {
+		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
+			switch ((*argv)[1]) {
+				case 'h': usage(); break;
+				case 'v': version(); break;
+				case 'H': prefix = "#"; break;
+				case 'p': --argc; prefix = enotnull(*++argv, "prefix"); break;
+				default: die("invalid option %s", *argv); break;
+			}
+		} else {
+			die("unexpected argument: %s", *argv);
+		}
 	}
 
 	create_window();
