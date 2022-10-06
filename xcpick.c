@@ -43,7 +43,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <string.h>
 #include <unistd.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
@@ -106,8 +105,7 @@ get_pointer_position(void)
 	reply = xcb_query_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		die("xcb_query_pointer failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_query_pointer failed with error code: %hhu", error->error_code);
 
 	pos.x = reply->root_x;
 	pos.y = reply->root_y;
@@ -127,12 +125,11 @@ load_cursor(int16_t id)
 
 	font = xcb_generate_id(conn);
 	cursor = xcb_generate_id(conn);
-	cookie = xcb_open_font_checked(conn, font, strlen("cursor"), "cursor");
+	cookie = xcb_open_font_checked(conn, font, sizeof("cursor") - 1, "cursor");
 	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error)
-		die("xcb_open_font failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_open_font failed with error code: %hhu", error->error_code);
 
 	cookie = xcb_create_glyph_cursor_checked(
 		conn, cursor, font, font,
@@ -142,8 +139,7 @@ load_cursor(int16_t id)
 	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error)
-		die("xcb_create_glyph_cursor failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_create_glyph_cursor failed with error code: %hhu", error->error_code);
 
 	xcb_close_font(conn, font);
 
@@ -157,7 +153,7 @@ get_color_at(int16_t x, int16_t y)
 	xcb_get_image_cookie_t cookie;
 	xcb_generic_error_t *error;
 	uint32_t color;
-	int data_length;
+	int bpp;
 	uint8_t *data;
 
 	cookie = xcb_get_image(
@@ -168,15 +164,13 @@ get_color_at(int16_t x, int16_t y)
 	reply = xcb_get_image_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		die("xcb_get_image failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_get_image failed with error code: %hhu", error->error_code);
 
 	data = xcb_get_image_data(reply);
-	data_length = xcb_get_image_data_length(reply);
+	bpp = xcb_get_image_data_length(reply) * 8;
 
-	if (data_length != 4)
-		die("invalid pixel format received, expected: 32bpp got: %dbpp",
-				data_length * 8);
+	if (bpp != 32)
+		die("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
 
 	color = *(uint32_t *)(data) & 0xffffff;
 
@@ -212,7 +206,7 @@ create_window(void)
 
 	xcb_change_property(
 		conn, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
-		XCB_ATOM_STRING, 8, strlen("xcpick"), "xcpick"
+		XCB_ATOM_STRING, 8, sizeof("xcpick") - 1, "xcpick"
 	);
 
 	xcb_map_window(conn, window);
@@ -245,8 +239,7 @@ grab_pointer(void)
 	reply = xcb_grab_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		die("xcb_grab_pointer failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_grab_pointer failed with error code: %hhu", error->error_code);
 
 	if (reply->status != XCB_GRAB_STATUS_SUCCESS)
 		die("can't grab pointer");
@@ -320,12 +313,8 @@ main(int argc, char **argv)
 
 	while ((ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
-			case XCB_MOTION_NOTIFY:
-				h_motion_notify((xcb_motion_notify_event_t *)(ev));
-				break;
-			case XCB_BUTTON_PRESS:
-				h_button_press((xcb_button_press_event_t *)(ev));
-				break;
+			case XCB_MOTION_NOTIFY:   h_motion_notify((void *)(ev)); break;
+			case XCB_BUTTON_PRESS:    h_button_press((void *)(ev)); break;
 		}
 
 		free(ev);
