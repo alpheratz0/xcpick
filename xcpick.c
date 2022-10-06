@@ -248,6 +248,12 @@ grab_pointer(void)
 }
 
 static void
+ungrab_pointer(void)
+{
+	xcb_ungrab_pointer(conn, XCB_CURRENT_TIME);
+}
+
+static void
 h_motion_notify(xcb_motion_notify_event_t *ev)
 {
 	color = get_color_at(ev->event_x, ev->event_y);
@@ -278,11 +284,13 @@ h_button_press(xcb_button_press_event_t *ev)
 	switch (ev->detail) {
 		case XCB_BUTTON_INDEX_1:
 			printf("%s%06x%s", prefix, color, isatty(STDOUT_FILENO) ? "\n" : "");
+			ungrab_pointer();
 			destroy_window();
 			exit(0);
 			break;
 		case XCB_BUTTON_INDEX_2:
 		case XCB_BUTTON_INDEX_3:
+			ungrab_pointer();
 			destroy_window();
 			exit(2);
 			break;
