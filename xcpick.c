@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
@@ -125,7 +126,7 @@ load_cursor(int16_t id)
 
 	font = xcb_generate_id(conn);
 	cursor = xcb_generate_id(conn);
-	cookie = xcb_open_font_checked(conn, font, sizeof("cursor") - 1, "cursor");
+	cookie = xcb_open_font_checked(conn, font, strlen("cursor"), "cursor");
 	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error)
@@ -206,7 +207,7 @@ create_window(void)
 
 	xcb_change_property(
 		conn, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
-		XCB_ATOM_STRING, 8, sizeof("xcpick") - 1, "xcpick"
+		XCB_ATOM_STRING, 8, strlen("xcpick"), "xcpick"
 	);
 
 	xcb_map_window(conn, window);
