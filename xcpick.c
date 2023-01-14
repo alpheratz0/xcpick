@@ -109,7 +109,8 @@ get_pointer_position(void)
 	reply = xcb_query_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		die("xcb_query_pointer failed with error code: %hhu", error->error_code);
+		die("xcb_query_pointer failed with error code: %hhu",
+				error->error_code);
 
 	pos.x = reply->root_x;
 	pos.y = reply->root_y;
@@ -133,7 +134,8 @@ load_cursor(int16_t id)
 	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error)
-		die("xcb_open_font failed with error code: %hhu", error->error_code);
+		die("xcb_open_font failed with error code: %hhu",
+				error->error_code);
 
 	cookie = xcb_create_glyph_cursor_checked(
 		conn, cursor, font, font,
@@ -143,7 +145,8 @@ load_cursor(int16_t id)
 	error = xcb_request_check(conn, cookie);
 
 	if (NULL != error)
-		die("xcb_create_glyph_cursor failed with error code: %hhu", error->error_code);
+		die("xcb_create_glyph_cursor failed with error code: %hhu",
+				error->error_code);
 
 	xcb_close_font(conn, font);
 
@@ -168,13 +171,15 @@ get_color_at(int16_t x, int16_t y)
 	reply = xcb_get_image_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		die("xcb_get_image failed with error code: %hhu", error->error_code);
+		die("xcb_get_image failed with error code: %hhu",
+				error->error_code);
 
 	data = xcb_get_image_data(reply);
 	bpp = xcb_get_image_data_length(reply) * 8;
 
 	if (bpp != 32)
-		die("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
+		die("invalid pixel format, expected: 32bpp got: %dbpp",
+				bpp);
 
 	color = *(uint32_t *)(data) & 0xffffff;
 
@@ -198,8 +203,8 @@ create_window(void)
 
 	xcb_create_window_aux(
 		conn, XCB_COPY_FROM_PARENT,
-		window, screen->root, pos.x, pos.y + PVWMARGIN,
-		PVWSIZE, PVWSIZE, PVWBORDERSIZE, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
+		window, screen->root, pos.x, pos.y + PVWMARGIN, PVWSIZE, PVWSIZE,
+		PVWBORDERSIZE, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
 		XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
 		(const xcb_create_window_value_list_t []) {{
 			.background_pixel = color,
@@ -235,15 +240,17 @@ grab_pointer(void)
 
 	cookie = xcb_grab_pointer(
 		conn, 0, screen->root,
-		XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
-		XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, XCB_NONE,
-		cursor, XCB_CURRENT_TIME
+		XCB_EVENT_MASK_POINTER_MOTION |
+		XCB_EVENT_MASK_BUTTON_PRESS,
+		XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC,
+		XCB_NONE, cursor, XCB_CURRENT_TIME
 	);
 
 	reply = xcb_grab_pointer_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		die("xcb_grab_pointer failed with error code: %hhu", error->error_code);
+		die("xcb_grab_pointer failed with error code: %hhu",
+				error->error_code);
 
 	if (reply->status != XCB_GRAB_STATUS_SUCCESS)
 		die("can't grab pointer");
@@ -260,24 +267,31 @@ ungrab_pointer(void)
 static void
 h_motion_notify(xcb_motion_notify_event_t *ev)
 {
+	xcb_configure_window_value_list_t cwvl;
+
 	color = get_color_at(ev->event_x, ev->event_y);
 
 	xcb_change_window_attributes(conn, window, XCB_CW_BACK_PIXEL, &color);
 	xcb_clear_area(conn, 0, window, 0, 0, PVWSIZE, PVWSIZE);
 
-	xcb_configure_window_aux(
-		conn, window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
-		(const xcb_configure_window_value_list_t []) {{
-			.x = ev->event_x < PVWMARGIN ?
-				PVWMARGIN :
-				ev->event_x >= screen->width_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) ?
-					screen->width_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) :
-					ev->event_x,
-			.y = ev->event_y >= screen->height_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) ?
-				ev->event_y - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) :
-				ev->event_y + PVWMARGIN,
-		}}
-	);
+	if (ev->event_x < PVWMARGIN) {
+		cwvl.x = PVWMARGIN;
+	} else if (ev->event_x >=
+			screen->width_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2)) {
+		cwvl.x = screen->width_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2);
+	} else {
+		cwvl.x = ev->event_x;
+	}
+
+	if (ev->event_y >=
+			screen->height_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2)) {
+		cwvl.y = ev->event_y - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2);
+	} else {
+		cwvl.y = ev->event_y + PVWMARGIN;
+	}
+
+	xcb_configure_window_aux(conn, window,
+			XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, &cwvl);
 
 	xcb_flush(conn);
 }
