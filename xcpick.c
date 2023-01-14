@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2022 <alpheratz99@protonmail.com>
+	Copyright (C) 2022-2023 <alpheratz99@protonmail.com>
 
 	This program is free software; you can redistribute it and/or modify it under
 	the terms of the GNU General Public License version 2 as published by the
@@ -50,6 +50,9 @@
 
 #define XC_GOBBLER (54)
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
+#define PVWSIZE (44)
+#define PVWMARGIN (25)
+#define PVWBORDERSIZE (3)
 
 static xcb_connection_t *conn;
 static xcb_screen_t *screen;
@@ -195,8 +198,8 @@ create_window(void)
 
 	xcb_create_window_aux(
 		conn, XCB_COPY_FROM_PARENT,
-		window, screen->root, pos.x, pos.y + 25,
-		44, 44, 3, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
+		window, screen->root, pos.x, pos.y + PVWMARGIN,
+		PVWSIZE, PVWSIZE, PVWBORDERSIZE, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual,
 		XCB_CW_BACK_PIXEL | XCB_CW_BORDER_PIXEL | XCB_CW_OVERRIDE_REDIRECT,
 		(const xcb_create_window_value_list_t []) {{
 			.background_pixel = color,
@@ -260,19 +263,19 @@ h_motion_notify(xcb_motion_notify_event_t *ev)
 	color = get_color_at(ev->event_x, ev->event_y);
 
 	xcb_change_window_attributes(conn, window, XCB_CW_BACK_PIXEL, &color);
-	xcb_clear_area(conn, 0, window, 0, 0, 44, 44);
+	xcb_clear_area(conn, 0, window, 0, 0, PVWSIZE, PVWSIZE);
 
 	xcb_configure_window_aux(
 		conn, window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
 		(const xcb_configure_window_value_list_t []) {{
-			.x = ev->event_x < 25 ?
-				25 :
-				ev->event_x >= screen->width_in_pixels - 75 ?
-					screen->width_in_pixels - 75 :
+			.x = ev->event_x < PVWMARGIN ?
+				PVWMARGIN :
+				ev->event_x >= screen->width_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) ?
+					screen->width_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) :
 					ev->event_x,
-			.y = ev->event_y >= screen->height_in_pixels - 75 ?
-				ev->event_y - 75 :
-				ev->event_y + 25,
+			.y = ev->event_y >= screen->height_in_pixels - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) ?
+				ev->event_y - (PVWSIZE + PVWMARGIN + PVWBORDERSIZE * 2) :
+				ev->event_y + PVWMARGIN,
 		}}
 	);
 
