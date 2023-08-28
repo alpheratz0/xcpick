@@ -301,18 +301,18 @@ static void
 h_button_press(xcb_button_press_event_t *ev)
 {
 	switch (ev->detail) {
-		case XCB_BUTTON_INDEX_1:
-			printf("%s%06x%s", prefix, color, isatty(STDOUT_FILENO) ? "\n" : "");
-			ungrab_pointer();
-			destroy_window();
-			exit(0);
-			break;
-		case XCB_BUTTON_INDEX_2:
-		case XCB_BUTTON_INDEX_3:
-			ungrab_pointer();
-			destroy_window();
-			exit(2);
-			break;
+	case XCB_BUTTON_INDEX_1:
+		printf("%s%06x%s", prefix, color, isatty(STDOUT_FILENO) ? "\n" : "");
+		ungrab_pointer();
+		destroy_window();
+		exit(0);
+		break;
+	case XCB_BUTTON_INDEX_2:
+	case XCB_BUTTON_INDEX_3:
+		ungrab_pointer();
+		destroy_window();
+		exit(2);
+		break;
 	}
 }
 
@@ -324,11 +324,11 @@ main(int argc, char **argv)
 	while (++argv, --argc > 0) {
 		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
 			switch ((*argv)[1]) {
-				case 'h': usage(); break;
-				case 'v': version(); break;
-				case 'H': prefix = "#"; break;
-				case 'p': --argc; prefix = enotnull(*++argv, "prefix"); break;
-				default: die("invalid option %s", *argv); break;
+			case 'h': usage(); break;
+			case 'v': version(); break;
+			case 'H': prefix = "#"; break;
+			case 'p': --argc; prefix = enotnull(*++argv, "prefix"); break;
+			default: die("invalid option %s", *argv); break;
 			}
 		} else {
 			die("unexpected argument: %s", *argv);
@@ -340,8 +340,8 @@ main(int argc, char **argv)
 
 	while ((ev = xcb_wait_for_event(conn))) {
 		switch (ev->response_type & ~0x80) {
-			case XCB_MOTION_NOTIFY:   h_motion_notify((void *)(ev)); break;
-			case XCB_BUTTON_PRESS:    h_button_press((void *)(ev)); break;
+		case XCB_MOTION_NOTIFY:   h_motion_notify((void *)(ev)); break;
+		case XCB_BUTTON_PRESS:    h_button_press((void *)(ev)); break;
 		}
 
 		free(ev);
