@@ -6,7 +6,7 @@ include config.mk
 all: xcpick
 
 xcpick: xcpick.o
-	$(CC) $(LDFLAGS) -o xcpick xcpick.o $(LDLIBS)
+	$(CC) $(LDFLAGS) -o xcpick xcpick.o
 
 clean:
 	rm -f xcpick xcpick.o xcpick-$(VERSION).tar.gz
